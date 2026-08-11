@@ -19,25 +19,25 @@ const studyTypes = [
       "Básico de ley (Consentimiento informado + ECG + Radiografía de Tórax frente, Exámen Clínico)",
   },
   {
-    value: "Básico + EEG + Audiometría + Psicotécnico + RX",
-    label: "Básico + EEG + Audiometría + Psicotécnico + RX",
+    value: "Básico + EEG + Audiometría + Psicotécnico + RX (CLS)",
+    label: "Básico + EEG + Audiometría + Psicotécnico + RX (CLS)",
     detail: "Básico de ley + EEG + Audiometria+ Psicotécnico + Radiografía de CLS frente y perfil",
   },
   {
-    value: "Básico + EEG + Audiometría + Psicotécnico + RX + Drogas",
-    label: "Básico + EEG + Audiometría + Psicotécnico + RX + Drogas",
+    value: "Básico + EEG + Audiometría + Psicotécnico + RX (CLS) + Drogas",
+    label: "Básico + EEG + Audiometría + Psicotécnico + RX (CLS) + Drogas",
     detail:
       "Básico de ley + EEG+ Audiometría+ Psicotécnico + Radiografía de CLS frente y perfil + Drogas de abuso con Benzodiacepinas y derivados",
   },
   {
-    value: "Básico + EEG + Audiometría + Psicotécnico + RX + Drogas (M/C)",
-    label: "Básico + EEG + Audiometría + Psicotécnico + RX + Drogas (M/C)",
+    value: "Básico + EEG + Audiometría + Psicotécnico + RX (CLS, CC) + Drogas (M/C)",
+    label: "Básico + EEG + Audiometría + Psicotécnico + RX (CLS, CC) + Drogas (M/C)",
     detail:
       "Básico de ley + EEG + Audiometria + Psicotecnico + Radiografía de CLS y CC frente y perfil + Drogas de abuso (Marihuana y Cocaina)",
   },
   {
-    value: "Básico + EEG + Audiometría + Psicotécnico + RX + Drogas + Test Cereal + Espiro",
-    label: "Básico + EEG + Audiometría + Psicotécnico + RX + Drogas + Test Cereal + Espiro",
+    value: "Básico + EEG + Audiometría + Psicotécnico + RX (CLS) + Drogas + Test Cereal + Espiro",
+    label: "Básico + EEG + Audiometría + Psicotécnico + RX (CLS) + Drogas + Test Cereal + Espiro",
     detail:
       "Básico de ley + EEG+ Audiometria + Psicotécnico + Radiografía de CLS frente y perfil + Drogas de abuso con benzodiacepinas y derivados+ Test del cereal + Espirometría",
   },
@@ -68,8 +68,9 @@ export default function AddEmployeePage() {
 
         return;
       }
-      
-      const payload = { ...data };
+
+      const payload = {...data};
+
       if (payload.study_type === "otro") {
         payload.study_type = payload.custom_study_type;
       }
@@ -193,7 +194,7 @@ export default function AddEmployeePage() {
         </select>
         {selectedStudy === "otro" && (
           <>
-            <label className="text-lg font-bold italic mt-2" htmlFor="custom_study_type">
+            <label className="mt-2 text-lg font-bold italic" htmlFor="custom_study_type">
               Especificar tipo de estudio *
             </label>
             <textarea

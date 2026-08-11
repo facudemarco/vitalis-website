@@ -2,6 +2,8 @@
 
 import {useRef, useState, useEffect, useCallback} from "react";
 
+type InputMode = "draw" | "upload";
+
 type UploadStatus = "idle" | "saving" | "success" | "error";
 
 interface SignatureCanvasProps {
@@ -42,6 +44,8 @@ export default function SignatureCanvas({
   const [isEmpty, setIsEmpty] = useState(true);
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [inputMode, setInputMode] = useState<InputMode>("draw");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ---------- Canvas setup & retina scaling ----------
 
@@ -195,6 +199,54 @@ export default function SignatureCanvas({
 
   // ---------- Actions ----------
 
+  const handleFileUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = canvasRef.current;
+          const ctx = canvas?.getContext("2d");
+          if (!canvas || !ctx) return;
+
+          const dpr = window.devicePixelRatio || 1;
+          ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+          ctx.drawImage(img, 0, 0, canvas.width / dpr, canvas.height / dpr);
+          pathsRef.current = [];
+          setIsEmpty(false);
+          setStatus("idle");
+        };
+        img.src = ev.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    },
+    [],
+  );
+
+  const handleModeChange = useCallback(
+    (mode: InputMode) => {
+      setInputMode(mode);
+      // Limpiar canvas y estado al cambiar de modo
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          const dpr = window.devicePixelRatio || 1;
+          ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+        }
+      }
+      pathsRef.current = [];
+      setIsEmpty(true);
+      setStatus("idle");
+      setErrorMessage("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+    [],
+  );
+
   const handleClear = useCallback(() => {
     const canvas = canvasRef.current;
 
@@ -291,21 +343,63 @@ export default function SignatureCanvas({
       className="flex w-full flex-col items-center gap-4"
       style={{maxWidth: width}}
     >
-      <p className="text-sm text-gray-500">Dibuje su firma en el recuadro</p>
+      {/* Tabs de modo */}
+      <div className="flex gap-4 self-start text-sm">
+        <button
+          className={`cursor-pointer pb-0.5 transition-all ${
+            inputMode === "draw"
+              ? "border-b-2 border-gray-800 font-semibold text-gray-800"
+              : "text-gray-400 hover:text-gray-600"
+          }`}
+          type="button"
+          onClick={() => handleModeChange("draw")}
+        >
+          Dibujar
+        </button>
+        <button
+          className={`cursor-pointer pb-0.5 transition-all ${
+            inputMode === "upload"
+              ? "border-b-2 border-gray-800 font-semibold text-gray-800"
+              : "text-gray-400 hover:text-gray-600"
+          }`}
+          type="button"
+          onClick={() => handleModeChange("upload")}
+        >
+          Subir imagen
+        </button>
+      </div>
 
-      <canvas
+      {inputMode === "upload" ? (
+        <div className="flex w-full flex-col gap-2">
+          <p className="text-sm text-gray-500">Seleccioná tu firma digital (.png, .jpg)</p>
+          <input
+            ref={fileInputRef}
+            accept="image/png,image/jpeg,image/*"
+            className="w-full rounded-lg border border-dashed border-gray-300 bg-white p-2 text-sm"
+            type="file"
+            onChange={handleFileUpload}
+          />
+          {/* Canvas oculto para procesar la imagen — sigue generando el blob */}
+          <canvas ref={canvasRef} className="hidden" />
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-gray-500">Dibuje su firma en el recuadro</p>
+          <canvas
         ref={canvasRef}
-        aria-label="Área de firma digital"
-        className="w-full cursor-crosshair touch-none rounded-lg border-2 border-dashed border-gray-300 bg-white"
-        role="img"
-        onMouseDown={startDrawing}
-        onMouseLeave={stopDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onTouchEnd={stopDrawing}
-        onTouchMove={draw}
-        onTouchStart={startDrawing}
-      />
+            aria-label="Área de firma digital"
+            className="w-full cursor-crosshair touch-none rounded-lg border-2 border-dashed border-gray-300 bg-white"
+            role="img"
+            onMouseDown={startDrawing}
+            onMouseLeave={stopDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onTouchEnd={stopDrawing}
+            onTouchMove={draw}
+            onTouchStart={startDrawing}
+          />
+        </>
+      )}
 
       {/* Status feedback */}
       {status === "success" && (
@@ -342,3 +436,4 @@ export default function SignatureCanvas({
     </div>
   );
 }
+
