@@ -19,7 +19,7 @@ export const PatientDataSection = React.memo(
       mode: "onBlur",
     });
 
-    const {getValues, trigger, register, formState: {errors}} = form;
+    const {getValues, trigger, register} = form;
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl ?? null);
 
@@ -27,10 +27,14 @@ export const PatientDataSection = React.memo(
       const unregister = registerSection({
         getValues: () => getValues(),
         validate: async () => trigger(),
+        getErrors: () =>
+          form.getFieldState("sons").error
+            ? ["Cantidad de hijos: ingresá un número entero igual o mayor a cero"]
+            : [],
       });
 
       return unregister;
-    }, [registerSection, getValues, trigger, errors]);
+    }, [registerSection, getValues, trigger]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0] ?? null;
