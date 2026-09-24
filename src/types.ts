@@ -197,6 +197,7 @@ export interface MedicalRecordStudies {
   laboratorio: boolean;
   rx_columna_cervical_frente: boolean;
   test_cereal: boolean;
+  examen_fisico: boolean;
   rx_torax_frente: boolean;
   espirometria: boolean;
   electroencefalograma: boolean;
@@ -575,6 +576,7 @@ export interface MedicalRecordSurgerys {
   vesicula_date: string;
   columna_date: string;
   others: boolean;
+  others_description: string;
   testiculos_date: string;
   testiculos: boolean;
   others_date: string;

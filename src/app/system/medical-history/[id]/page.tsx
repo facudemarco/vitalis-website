@@ -61,6 +61,44 @@ interface PageProps {
   params: Promise<{id: string}>;
 }
 
+const getMedicalRecordErrorMessage = (error: unknown) => {
+  const detail = (error as {response?: {data?: {detail?: unknown}}})?.response?.data?.detail;
+
+  if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+    const fields = (detail as {fields?: Array<{label?: string; field?: string; table?: string}>})
+      .fields;
+    if (Array.isArray(fields) && fields.length > 0) {
+      const labels = fields.map((item) => item.label || [item.table, item.field].filter(Boolean).join("."));
+
+      return `Faltan completar estos campos: ${labels.join(", ")}. Los datos ingresados se conservaron.`;
+    }
+
+    const message = (detail as {message?: unknown}).message;
+    if (typeof message === "string") return message;
+  }
+
+  if (Array.isArray(detail)) {
+    const missing = detail
+      .filter((item): item is {loc?: Array<string | number>; msg?: string} => Boolean(item))
+      .map((item) => {
+        const field = item.loc?.filter((part) => !["body", "data"].includes(String(part))).join(" · ");
+
+        return field ? `${field}: ${item.msg || "campo inválido"}` : item.msg;
+      })
+      .filter((message): message is string => Boolean(message));
+
+    if (missing.length > 0) {
+      return `Revisá estos campos: ${missing.join(", ")}. Los datos ingresados se conservaron.`;
+    }
+  }
+
+  if (typeof detail === "string" && detail.trim()) {
+    return `${detail} Los datos ingresados se conservaron; corregí el problema y volvé a guardar.`;
+  }
+
+  return "No se pudo guardar la ficha médica. Los datos ingresados se conservaron; revisá los campos obligatorios y volvé a intentar.";
+};
+
 export default function MedicalHistoryPage({params}: PageProps) {
   const patientId = use(params).id;
   const router = useRouter();
@@ -160,21 +198,32 @@ export default function MedicalHistoryPage({params}: PageProps) {
       setSaved(false);
 
       const entries = registry.getAll();
+      const merged: MedicalRecord = {...medicalRecord};
+
+      // Snapshot every mounted section before validation or network requests so a failed save can be retried.
+      for (const [key, handler] of entries) {
+        (merged as any)[key] = handler.getValues();
+      }
+      setMedicalRecord(merged);
+
+      const missingFields = new Set<string>();
+      let formIsValid = true;
 
       for (const [, handler] of entries) {
-        if (handler.validate) {
-          const ok = await handler.validate();
-
-          if (!ok) return;
+        if (handler.validate && !(await handler.validate())) {
+          formIsValid = false;
+          handler.getErrors?.().forEach((field) => missingFields.add(field));
         }
       }
 
-      const merged: MedicalRecord = {...medicalRecord};
-
-      for (const [key, handler] of entries) {
-        const value = handler.getValues();
-
-        (merged as any)[key] = value;
+      if (!formIsValid) {
+        const fieldList = Array.from(missingFields);
+        setError(
+          fieldList.length
+            ? `Faltan completar estos campos: ${fieldList.join(", ")}. Los datos ingresados se conservaron.`
+            : "Revisá los campos obligatorios indicados. Los datos ingresados se conservaron.",
+        );
+        return;
       }
 
       let result: MedicalRecord;
@@ -237,7 +286,7 @@ export default function MedicalHistoryPage({params}: PageProps) {
         window.location.reload();
       }, 1000);
     } catch (err) {
-      setError("Error guardando historial. Rellene todos los campos obligatorios.");
+      setError(getMedicalRecordErrorMessage(err));
     } finally {
       setSaving(false);
     }

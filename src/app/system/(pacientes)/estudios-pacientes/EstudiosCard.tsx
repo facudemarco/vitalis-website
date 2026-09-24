@@ -183,6 +183,10 @@ export default function EstudiosCard({studies}: {studies: Studies}) {
                   >
                     Descargar Estudio ({files[0].original_filename})
                   </button>
+                ) : studies.study_type === "Consentimiento informado" ? (
+                  <p className="text-sm text-amber-200">
+                    Este consentimiento todavía no tiene un PDF adjunto.
+                  </p>
                 ) : (
                   <button className="cursor-pointer underline" onClick={() => void downloadStudy()}>
                     Descargar PDF
@@ -207,7 +211,7 @@ export default function EstudiosCard({studies}: {studies: Studies}) {
                       )
                     </button>
                   ))}
-                  {files.length === 0 && (
+                  {files.length === 0 && studies.study_type !== "Consentimiento informado" && (
                     <button
                       className="cursor-pointer underline"
                       onClick={() => void downloadStudy()}

@@ -29,6 +29,7 @@ const normalizeBooleanFields = (data: MedicalRecordStudies | null): MedicalRecor
     laboratorio: toBool(data.laboratorio),
     rx_columna_cervical_frente: toBool(data.rx_columna_cervical_frente),
     test_cereal: toBool(data.test_cereal),
+    examen_fisico: toBool(data.examen_fisico),
     rx_torax_frente: toBool(data.rx_torax_frente),
     espirometria: toBool(data.espirometria),
     electroencefalograma: toBool(data.electroencefalograma),
@@ -296,6 +297,42 @@ export const StudiesDoneSection = React.memo(({defaultValues, registerSection}: 
                     onChange={onChange}
                   />
                   <label htmlFor="drogas_abuso">Drogas de abuso</label>
+                </div>
+              )}
+            />
+
+            {/* Test de cereal */}
+            <Controller
+              control={control}
+              name="test_cereal"
+              render={({field: {onChange, value}}) => (
+                <div className="flex items-center gap-2">
+                  <input
+                    checked={Boolean(value)}
+                    className="h-5 w-5 cursor-pointer"
+                    id="test_cereal"
+                    type="checkbox"
+                    onChange={onChange}
+                  />
+                  <label htmlFor="test_cereal">Test de cereal</label>
+                </div>
+              )}
+            />
+
+            {/* Exámen físico */}
+            <Controller
+              control={control}
+              name="examen_fisico"
+              render={({field: {onChange, value}}) => (
+                <div className="flex items-center gap-2">
+                  <input
+                    checked={Boolean(value)}
+                    className="h-5 w-5 cursor-pointer"
+                    id="examen_fisico"
+                    type="checkbox"
+                    onChange={onChange}
+                  />
+                  <label htmlFor="examen_fisico">Exámen físico</label>
                 </div>
               )}
             />
