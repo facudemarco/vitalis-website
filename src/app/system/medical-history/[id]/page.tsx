@@ -61,42 +61,64 @@ interface PageProps {
   params: Promise<{id: string}>;
 }
 
+const medicalRecordFieldLabels: Record<string, string> = {
+  sons: "Cantidad de hijos",
+};
+
+const getMedicalRecordFieldLabel = (field: unknown) => {
+  const key = String(field ?? "").split(".").at(-1) ?? "";
+  return (
+    medicalRecordFieldLabels[key] ??
+    key.replaceAll("_", " ").replace(/\\b\\w/g, (letter) => letter.toUpperCase()) ??
+    "dato ingresado"
+  );
+};
+
+const getMedicalRecordValidationMessage = (item: {
+  loc?: Array<string | number>;
+  type?: string;
+}) => {
+  const path = item.loc?.filter((part) => !["body", "data"].includes(String(part))) ?? [];
+  const label = getMedicalRecordFieldLabel(path.at(-1));
+  const field = String(path.at(-1) ?? "");
+
+  if (item.type === "int_parsing" || item.type === "int_from_float") {
+    return field === "sons"
+      ? "Ingresá la cantidad de hijos como un número entero (por ejemplo, 2)."
+      : `El campo “${label}” debe ser un número entero.`;
+  }
+  if (item.type === "missing") return `Completá el campo “${label}”.`;
+  if (item.type === "float_parsing" || item.type === "float_type") {
+    return `Ingresá un número válido en el campo “${label}”.`;
+  }
+  if (item.type === "bool_parsing") {
+    return `Revisá la opción seleccionada en “${label}”.`;
+  }
+  return `Revisá el valor ingresado en “${label}”.`;
+};
+
 const getMedicalRecordErrorMessage = (error: unknown) => {
   const detail = (error as {response?: {data?: {detail?: unknown}}})?.response?.data?.detail;
 
   if (detail && typeof detail === "object" && !Array.isArray(detail)) {
-    const fields = (detail as {fields?: Array<{label?: string; field?: string; table?: string}>})
-      .fields;
+    const fields = (detail as {fields?: Array<{label?: string; field?: string}>}).fields;
     if (Array.isArray(fields) && fields.length > 0) {
-      const labels = fields.map((item) => item.label || [item.table, item.field].filter(Boolean).join("."));
-
-      return `Faltan completar estos campos: ${labels.join(", ")}. Los datos ingresados se conservaron.`;
+      const labels = fields.map((item) => item.label || getMedicalRecordFieldLabel(item.field));
+      return `Revisá estos campos: ${labels.join(", ")}. Los datos ingresados se conservaron.`;
     }
-
-    const message = (detail as {message?: unknown}).message;
-    if (typeof message === "string") return message;
   }
 
   if (Array.isArray(detail)) {
-    const missing = detail
-      .filter((item): item is {loc?: Array<string | number>; msg?: string} => Boolean(item))
-      .map((item) => {
-        const field = item.loc?.filter((part) => !["body", "data"].includes(String(part))).join(" · ");
+    const messages = detail
+      .filter((item): item is {loc?: Array<string | number>; type?: string} => Boolean(item))
+      .map(getMedicalRecordValidationMessage);
 
-        return field ? `${field}: ${item.msg || "campo inválido"}` : item.msg;
-      })
-      .filter((message): message is string => Boolean(message));
-
-    if (missing.length > 0) {
-      return `Revisá estos campos: ${missing.join(", ")}. Los datos ingresados se conservaron.`;
+    if (messages.length > 0) {
+      return `No se pudo guardar la ficha: ${messages.join(" ")} Los datos ingresados se conservaron.`;
     }
   }
 
-  if (typeof detail === "string" && detail.trim()) {
-    return `${detail} Los datos ingresados se conservaron; corregí el problema y volvé a guardar.`;
-  }
-
-  return "No se pudo guardar la ficha médica. Los datos ingresados se conservaron; revisá los campos obligatorios y volvé a intentar.";
+  return "No se pudo guardar la ficha médica. Revisá los campos e intentá nuevamente. Los datos ingresados se conservaron.";
 };
 
 export default function MedicalHistoryPage({params}: PageProps) {
@@ -220,7 +242,7 @@ export default function MedicalHistoryPage({params}: PageProps) {
         const fieldList = Array.from(missingFields);
         setError(
           fieldList.length
-            ? `Faltan completar estos campos: ${fieldList.join(", ")}. Los datos ingresados se conservaron.`
+            ? `Revisá estos campos: ${fieldList.join(", ")}. Los datos ingresados se conservaron.`
             : "Revisá los campos obligatorios indicados. Los datos ingresados se conservaron.",
         );
         return;
