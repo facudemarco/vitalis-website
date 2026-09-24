@@ -232,7 +232,7 @@ export interface MedicalRecordRespiratorioExam {
 export interface MedicalRecordData {
   id: string;
   medical_record_id: string;
-  sons: number;
+  sons?: number | null;
   nacionality: string;
   phone: number;
   tasks: string;
