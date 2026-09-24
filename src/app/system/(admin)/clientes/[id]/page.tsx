@@ -64,9 +64,11 @@ export default function EstudiosPacientesPage({params}: PageProps) {
   const [consentFile, setConsentFile] = useState<File | null>(null);
   const consentFileInput = useRef<HTMLInputElement | null>(null);
 
-  const hasConsent = studies.some(
+  const existingConsent = studies.find(
     (study) => study.study_type?.trim().toLocaleLowerCase() === "consentimiento informado",
   );
+  const hasConsentPdf = Boolean(existingConsent?.files?.length);
+  const hasLegacyConsentWithoutPdf = Boolean(existingConsent && !existingConsent.files?.length);
 
   useEffect(() => {
     const data = async () => {
@@ -123,14 +125,16 @@ export default function EstudiosPacientesPage({params}: PageProps) {
 
   const consentUploadControl = (
     <div className="flex flex-col items-start gap-2">
-      {hasConsent ? (
+      {hasConsentPdf ? (
         <p className="text-sm font-medium text-green-700">
           El consentimiento informado ya está registrado para este paciente.
         </p>
       ) : (
         <>
           <label className="flex flex-col gap-1 text-sm font-medium">
-            Consentimiento informado (PDF)
+            {hasLegacyConsentWithoutPdf
+              ? "Adjuntar PDF al consentimiento informado existente"
+              : "Consentimiento informado (PDF)"}
             <input
               ref={consentFileInput}
               accept=".pdf,application/pdf"
@@ -146,7 +150,11 @@ export default function EstudiosPacientesPage({params}: PageProps) {
             type="button"
             onClick={() => void registerConsent()}
           >
-            {uploadingConsent ? "Subiendo..." : "Subir consentimiento informado"}
+            {uploadingConsent
+              ? "Subiendo..."
+              : hasLegacyConsentWithoutPdf
+                ? "Adjuntar PDF"
+                : "Subir consentimiento informado"}
           </button>
         </>
       )}
