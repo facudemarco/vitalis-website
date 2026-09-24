@@ -81,8 +81,16 @@ export default function page() {
     }
   };
 
+  const noReportStudyType = "Consentimiento informado";
+
   const handleChangeStudyType = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStudyType(e.target.value);
+    const nextStudyType = e.target.value;
+
+    setStudyType(nextStudyType);
+    if (nextStudyType === noReportStudyType && fileRef.current) {
+      fileRef.current.value = "";
+      setFileName("Sin archivos seleccionados");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -94,14 +102,19 @@ export default function page() {
       return;
     }
 
+    if (!studyType) {
+      alert("Selecciona el tipo de estudio");
+      return;
+    }
+
     const f = new FormData();
     const file = fileRef.current?.files?.[0];
 
-    if (file) {
+    if (studyType !== noReportStudyType && file) {
       f.append("study_files", file);
     }
     f.append("study_type", studyType);
-    f.append("status", "pending");
+    f.append("status", studyType === noReportStudyType ? "Disponible" : "pending");
 
     try {
       const res = await dataService.postStudie(selectedPatientForStudy.id, f);
@@ -258,6 +271,7 @@ export default function page() {
               {/* Select */}
               <div className="relative">
                 <select
+                  required
                   className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-10 text-gray-900 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
                   value={studyType}
                   onChange={handleChangeStudyType}
@@ -274,6 +288,7 @@ export default function page() {
                   <option value="Psicotecnico">Psicotécnico</option>
                   <option value="Audiometria">Audiometría</option>
                   <option value="analisis-clinico">Análisis clínico de laboratorio</option>
+                  <option value="Consentimiento informado">Consentimiento informado (sin informe)</option>
                 </select>
 
                 <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-500">
@@ -281,11 +296,17 @@ export default function page() {
                 </div>
               </div>
 
-              {/* Subir PDF (custom) */}
+              {studyType === noReportStudyType ? (
+                <p className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                  Este estudio no requiere adjuntar un informe.
+                </p>
+              ) : (
+                <>
               <div className="space-y-1">
                 <input
                   ref={fileRef}
                   accept="application/pdf, image/*"
+                  required
                   className="hidden"
                   id="pdf"
                   name="pdf"
@@ -308,6 +329,8 @@ export default function page() {
 
                 <p className="text-sm text-gray-500">{fileName}</p>
               </div>
+                </>
+              )}
 
               {/* Botones */}
               <div className="space-y-3 pt-2">

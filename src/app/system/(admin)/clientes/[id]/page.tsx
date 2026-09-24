@@ -58,6 +58,9 @@ export default function EstudiosPacientesPage({params}: PageProps) {
   const [data, setData] = useState<UserPatient | null>(null);
   const id = use(params).id;
   const [studies, setStudies] = useState<Studies[]>([]);
+  const [uploadingConsent, setUploadingConsent] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
   useEffect(() => {
     const data = async () => {
@@ -74,6 +77,43 @@ export default function EstudiosPacientesPage({params}: PageProps) {
 
     void data();
   }, [id]);
+
+  const registerConsent = async () => {
+    setUploadingConsent(true);
+    setUploadError(null);
+    setUploadSuccess(false);
+
+    try {
+      const formData = new FormData();
+      formData.append("study_type", "Consentimiento informado");
+      formData.append("status", "Disponible");
+      await dataService.postStudie(id, formData);
+      setStudies(await dataService.getStudiesByPatientId(id));
+      setUploadSuccess(true);
+    } catch (error) {
+      console.error("Error registrando consentimiento informado:", error);
+      setUploadError("No se pudo registrar el consentimiento informado.");
+    } finally {
+      setUploadingConsent(false);
+    }
+  };
+
+  const consentUploadControl = (
+    <div className="flex flex-col items-start gap-2">
+      <button
+        className="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white disabled:opacity-60"
+        disabled={uploadingConsent}
+        type="button"
+        onClick={() => void registerConsent()}
+      >
+        {uploadingConsent ? "Registrando..." : "Registrar consentimiento informado"}
+      </button>
+      {uploadError && <p className="text-sm text-red-700">{uploadError}</p>}
+      {uploadSuccess && (
+        <p className="text-sm text-green-700">Consentimiento informado disponible.</p>
+      )}
+    </div>
+  );
 
   if (!data) {
     return (
@@ -94,6 +134,7 @@ export default function EstudiosPacientesPage({params}: PageProps) {
             Volver
           </Link>
           <p>No hay estudios</p>
+          {consentUploadControl}
         </section>
       </Panel>
     );
@@ -105,6 +146,7 @@ export default function EstudiosPacientesPage({params}: PageProps) {
       pageTitle={`Historial de estudios - ${data.first_name} ${data.last_name}`}
     >
       <section className="my-5 flex flex-col gap-5">
+        {consentUploadControl}
         <Link className="flex items-center gap-1 font-bold" href="/system/clientes">
           <ArrowLeft />
           Volver
