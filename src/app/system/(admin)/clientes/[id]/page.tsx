@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {use, useEffect, useState} from "react";
+import {use, useEffect, useRef, useState} from "react";
 
 import {Studies, UserPatient} from "@/types";
 
@@ -61,6 +61,12 @@ export default function EstudiosPacientesPage({params}: PageProps) {
   const [uploadingConsent, setUploadingConsent] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [consentFile, setConsentFile] = useState<File | null>(null);
+  const consentFileInput = useRef<HTMLInputElement | null>(null);
+
+  const hasConsent = studies.some(
+    (study) => study.study_type?.trim().toLocaleLowerCase() === "consentimiento informado",
+  );
 
   useEffect(() => {
     const data = async () => {
@@ -79,6 +85,15 @@ export default function EstudiosPacientesPage({params}: PageProps) {
   }, [id]);
 
   const registerConsent = async () => {
+    if (!consentFile) {
+      setUploadError("Adjuntá el PDF del consentimiento informado.");
+      return;
+    }
+    if (!consentFile.name.toLowerCase().endsWith(".pdf")) {
+      setUploadError("El consentimiento informado debe ser un archivo PDF.");
+      return;
+    }
+
     setUploadingConsent(true);
     setUploadError(null);
     setUploadSuccess(false);
@@ -87,12 +102,20 @@ export default function EstudiosPacientesPage({params}: PageProps) {
       const formData = new FormData();
       formData.append("study_type", "Consentimiento informado");
       formData.append("status", "Disponible");
+      formData.append("study_files", consentFile);
       await dataService.postStudie(id, formData);
       setStudies(await dataService.getStudiesByPatientId(id));
+      setConsentFile(null);
+      if (consentFileInput.current) consentFileInput.current.value = "";
       setUploadSuccess(true);
     } catch (error) {
       console.error("Error registrando consentimiento informado:", error);
-      setUploadError("No se pudo registrar el consentimiento informado.");
+      const response = (error as {response?: {data?: {detail?: unknown}}})?.response;
+      setUploadError(
+        typeof response?.data?.detail === "string"
+          ? response.data.detail
+          : "No se pudo registrar el consentimiento informado.",
+      );
     } finally {
       setUploadingConsent(false);
     }
@@ -100,14 +123,33 @@ export default function EstudiosPacientesPage({params}: PageProps) {
 
   const consentUploadControl = (
     <div className="flex flex-col items-start gap-2">
-      <button
-        className="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white disabled:opacity-60"
-        disabled={uploadingConsent}
-        type="button"
-        onClick={() => void registerConsent()}
-      >
-        {uploadingConsent ? "Registrando..." : "Registrar consentimiento informado"}
-      </button>
+      {hasConsent ? (
+        <p className="text-sm font-medium text-green-700">
+          El consentimiento informado ya está registrado para este paciente.
+        </p>
+      ) : (
+        <>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Consentimiento informado (PDF)
+            <input
+              ref={consentFileInput}
+              accept=".pdf,application/pdf"
+              className="rounded-lg border border-gray-300 bg-white p-2"
+              disabled={uploadingConsent}
+              type="file"
+              onChange={(event) => setConsentFile(event.target.files?.[0] || null)}
+            />
+          </label>
+          <button
+            className="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white disabled:opacity-60"
+            disabled={uploadingConsent || !consentFile}
+            type="button"
+            onClick={() => void registerConsent()}
+          >
+            {uploadingConsent ? "Subiendo..." : "Subir consentimiento informado"}
+          </button>
+        </>
+      )}
       {uploadError && <p className="text-sm text-red-700">{uploadError}</p>}
       {uploadSuccess && (
         <p className="text-sm text-green-700">Consentimiento informado disponible.</p>
