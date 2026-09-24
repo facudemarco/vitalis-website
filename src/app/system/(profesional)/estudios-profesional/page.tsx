@@ -110,6 +110,11 @@ export default function page() {
     const f = new FormData();
     const file = fileRef.current?.files?.[0];
 
+    if (studyType !== noReportStudyType && !file) {
+      alert("Selecciona el archivo del estudio");
+      return;
+    }
+
     if (studyType !== noReportStudyType && file) {
       f.append("study_files", file);
     }
@@ -260,7 +265,7 @@ export default function page() {
               {/* Fecha */}
               <div className="relative">
                 <input
-                  required
+                  required={studyType !== noReportStudyType}
                   className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
                   type="date"
                   value={date}
@@ -306,7 +311,6 @@ export default function page() {
                 <input
                   ref={fileRef}
                   accept="application/pdf, image/*"
-                  required
                   className="hidden"
                   id="pdf"
                   name="pdf"
