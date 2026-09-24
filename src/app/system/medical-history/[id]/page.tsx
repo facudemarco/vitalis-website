@@ -67,11 +67,8 @@ const medicalRecordFieldLabels: Record<string, string> = {
 
 const getMedicalRecordFieldLabel = (field: unknown) => {
   const key = String(field ?? "").split(".").at(-1) ?? "";
-  return (
-    medicalRecordFieldLabels[key] ??
-    key.replaceAll("_", " ").replace(/\\b\\w/g, (letter) => letter.toUpperCase()) ??
-    "dato ingresado"
-  );
+  const humanizedKey = key.replaceAll("_", " ").replace(/\\b\\w/g, (letter) => letter.toUpperCase());
+  return medicalRecordFieldLabels[key] ?? humanizedKey || "dato ingresado";
 };
 
 const getMedicalRecordValidationMessage = (item: {
