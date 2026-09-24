@@ -19,7 +19,7 @@ export const PatientDataSection = React.memo(
       mode: "onBlur",
     });
 
-    const {getValues, trigger, register} = form;
+    const {getValues, trigger, register, formState: {errors}} = form;
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl ?? null);
 
@@ -30,7 +30,7 @@ export const PatientDataSection = React.memo(
       });
 
       return unregister;
-    }, [registerSection, getValues, trigger]);
+    }, [registerSection, getValues, trigger, errors]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0] ?? null;
@@ -105,8 +105,16 @@ export const PatientDataSection = React.memo(
             <input
               className="w-full border border-gray-500 p-2"
               placeholder="Hijos"
-              type="text"
-              {...register("sons")}
+              type="number"
+              min="0"
+              step="1"
+              {...register("sons", {
+                setValueAs: (value) => (value === "" ? null : Number(value)),
+                validate: (value) =>
+                  value == null ||
+                  (Number.isInteger(value) && value >= 0) ||
+                  "Ingresá un número entero igual o mayor a cero.",
+              })}
             />
           </div>
           <div className="flex w-[150px] shrink-0 flex-col items-center gap-2">
