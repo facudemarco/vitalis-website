@@ -53,7 +53,7 @@ export const FamilyHistory = React.memo(({defaultValues, registerSection}: Props
       sisters_alive: false,
       husband_alive: false,
       sons_alive: false,
-      ...normalizedDefaults,
+      ...(normalizedDefaults ?? {}),
     },
     mode: "onBlur",
   });
