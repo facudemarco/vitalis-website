@@ -706,6 +706,16 @@ export default function MedicalHistoryPage({params}: PageProps) {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
+        <div className="flex justify-center py-8">
+          <button
+            className="bg-orange my-5 cursor-pointer rounded-md border border-black px-10 py-2 text-lg font-bold disabled:opacity-50"
+            disabled={saving}
+            type="button"
+            onClick={() => void handleSaveAll()}
+          >
+            Guardar
+          </button>
+        </div>
       </form>
     </main>
   );
