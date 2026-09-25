@@ -46,7 +46,15 @@ export const FamilyHistory = React.memo(({defaultValues, registerSection}: Props
   const normalizedDefaults = normalizeBooleanFields(defaultValues);
 
   const form = useForm<MedicalRecordFamilyHistory>({
-    defaultValues: normalizedDefaults ?? ({} as MedicalRecordFamilyHistory),
+    defaultValues: {
+      father_alive: false,
+      mother_alive: false,
+      brothers_alive: false,
+      sisters_alive: false,
+      husband_alive: false,
+      sons_alive: false,
+      ...normalizedDefaults,
+    },
     mode: "onBlur",
   });
 
