@@ -60,6 +60,9 @@ export default function StudiesPanelPage() {
               <th className="border-b border-neutral-700 px-6 py-4 text-left text-sm font-medium">
                 Imagen
               </th>
+              <th className="border-b border-neutral-700 px-6 py-4 text-left text-sm font-medium">
+                Informe obligatorio
+              </th>
               <th className="w-16 border-b border-neutral-700" />
             </tr>
           </thead>
@@ -76,6 +79,9 @@ export default function StudiesPanelPage() {
                     className="h-12 w-12 rounded object-cover"
                     src={estudio.url_image}
                   />
+                </td>
+                <td className="px-6 py-4 text-sm text-white">
+                  {estudio.requires_report ? "Sí" : "No"}
                 </td>
                 <td className="px-4 py-4">
                   <button
