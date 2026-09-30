@@ -2,17 +2,30 @@
 import Link from "next/link";
 import {useEffect, useState, useRef} from "react";
 
-import {UserPatient, UserCompany} from "@/types";
+import {UserPatient, UserCompany, StudiesCategory} from "@/types";
 
 import {ArrowLeft, Estudies} from "@/components/ui/Icons";
 import {dataService} from "@/services/dataService";
 
 import Panel from "../../components/Panel";
 
+const LEGACY_STUDY_TYPES = [
+  ["Electrocardiograma", "Electrocardiograma"],
+  ["Electroencefalograma", "Electroencefalograma"],
+  ["Espirometria", "Espirometría"],
+  ["Ergometria", "Ergometría"],
+  ["Radiografia", "Radiografía"],
+  ["Ecografia", "Ecografía"],
+  ["Psicotecnico", "Psicotécnico"],
+  ["Audiometria", "Audiometría"],
+  ["analisis-clinico", "Análisis clínico de laboratorio"],
+] as const;
+
 export default function page() {
   const [view, setView] = useState<"selection" | "companies" | "patients">("selection");
   const [patients, setPatients] = useState<UserPatient[]>([]);
   const [companies, setCompanies] = useState<UserCompany[]>([]);
+  const [studyCategories, setStudyCategories] = useState<StudiesCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
 
@@ -35,6 +48,11 @@ export default function page() {
         console.log("Companies fetched:", companiesRes);
         setPatients(patientsRes);
         setCompanies(companiesRes);
+        try {
+          setStudyCategories(await dataService.getCategories());
+        } catch (categoryError) {
+          console.error("Error fetching study categories:", categoryError);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -125,6 +143,14 @@ export default function page() {
   };
 
   const filteredPatients = getFilteredPatients();
+  const categoryNames = new Set(studyCategories.map((category) => category.name));
+  const studyTypeOptions = [
+    ...studyCategories.map((category) => ({value: category.name, label: category.name})),
+    ...LEGACY_STUDY_TYPES.filter(([value]) => !categoryNames.has(value)).map(([value, label]) => ({
+      value,
+      label,
+    })),
+  ];
 
   if (loading) {
     return (
@@ -258,6 +284,7 @@ export default function page() {
               {/* Select */}
               <div className="relative">
                 <select
+                  required
                   className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-10 text-gray-900 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
                   value={studyType}
                   onChange={handleChangeStudyType}
@@ -265,15 +292,11 @@ export default function page() {
                   <option disabled className="text-gray-400" value="">
                     Estudio realizado
                   </option>
-                  <option value="Electrocardiograma">Electrocardiograma</option>
-                  <option value="Electroencefalograma">Electroencefalograma</option>
-                  <option value="Espirometria">Espirometría</option>
-                  <option value="Ergometria">Ergometría</option>
-                  <option value="Radiografia">Radiografía</option>
-                  <option value="Ecografia">Ecografía</option>
-                  <option value="Psicotecnico">Psicotécnico</option>
-                  <option value="Audiometria">Audiometría</option>
-                  <option value="analisis-clinico">Análisis clínico de laboratorio</option>
+                  {studyTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
 
                 <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-500">
