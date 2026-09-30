@@ -19,6 +19,7 @@ const LEGACY_STUDY_TYPES = [
   ["Psicotecnico", "Psicotécnico"],
   ["Audiometria", "Audiometría"],
   ["analisis-clinico", "Análisis clínico de laboratorio"],
+  ["Consentimiento informado", "Consentimiento informado (PDF)"],
 ] as const;
 
 export default function page() {
