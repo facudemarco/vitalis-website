@@ -34,6 +34,7 @@ export interface StudiesCategory {
   name: string;
   image: string;
   url_image?: string;
+  requires_report?: boolean;
   id?: string;
 }
 
@@ -45,6 +46,7 @@ export interface StudyFile {
   mime_type: string;
   size_bytes: number;
   uploaded_at: string;
+  is_report?: boolean;
 }
 
 export interface Studies {
@@ -56,6 +58,7 @@ export interface Studies {
   created_at?: string;
   status: string;
   study_file?: string;
+  requires_report?: boolean;
   files?: StudyFile[];
 }
 
@@ -197,6 +200,7 @@ export interface MedicalRecordStudies {
   laboratorio: boolean;
   rx_columna_cervical_frente: boolean;
   test_cereal: boolean;
+  examen_fisico: boolean;
   rx_torax_frente: boolean;
   espirometria: boolean;
   electroencefalograma: boolean;
@@ -231,7 +235,7 @@ export interface MedicalRecordRespiratorioExam {
 export interface MedicalRecordData {
   id: string;
   medical_record_id: string;
-  sons: number;
+  sons?: number | null;
   nacionality: string;
   phone: number;
   tasks: string;
@@ -575,6 +579,7 @@ export interface MedicalRecordSurgerys {
   vesicula_date: string;
   columna_date: string;
   others: boolean;
+  others_description: string;
   testiculos_date: string;
   testiculos: boolean;
   others_date: string;

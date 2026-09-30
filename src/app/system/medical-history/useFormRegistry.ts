@@ -3,6 +3,7 @@ import {useCallback, useRef} from "react";
 export interface SectionHandler<T> {
   getValues: () => T;
   validate?: () => Promise<boolean>;
+  getErrors?: () => string[];
 }
 
 export function useFormRegistry<TRecord extends Record<string, any>>() {
