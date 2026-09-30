@@ -19,6 +19,7 @@ const LEGACY_STUDY_TYPES = [
   ["Psicotecnico", "Psicotécnico"],
   ["Audiometria", "Audiometría"],
   ["analisis-clinico", "Análisis clínico de laboratorio"],
+  ["Consentimiento informado", "Consentimiento informado (PDF)"],
 ] as const;
 
 export default function page() {
@@ -99,8 +100,12 @@ export default function page() {
     }
   };
 
+  const consentStudyType = "Consentimiento informado";
+
   const handleChangeStudyType = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStudyType(e.target.value);
+    const nextStudyType = e.target.value;
+
+    setStudyType(nextStudyType);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -112,14 +117,31 @@ export default function page() {
       return;
     }
 
+    if (!studyType) {
+      alert("Selecciona el tipo de estudio");
+      return;
+    }
+
     const f = new FormData();
     const file = fileRef.current?.files?.[0];
 
-    if (file) {
-      f.append("study_files", file);
+    if (!file) {
+      alert(
+        studyType === consentStudyType
+          ? "Selecciona el PDF del consentimiento informado"
+          : "Selecciona el archivo del estudio",
+      );
+      return;
     }
+
+    if (studyType === consentStudyType && !file.name.toLowerCase().endsWith(".pdf")) {
+      alert("El consentimiento informado debe ser un archivo PDF");
+      return;
+    }
+
+    f.append("study_files", file);
     f.append("study_type", studyType);
-    f.append("status", "pending");
+    f.append("status", studyType === consentStudyType ? "Disponible" : "pending");
 
     try {
       const res = await dataService.postStudie(selectedPatientForStudy.id, f);
@@ -129,7 +151,12 @@ export default function page() {
       closeModal();
     } catch (error) {
       console.error("Error uploading study:", error);
-      alert("Error al cargar el estudio");
+      const response = (error as {response?: {data?: {detail?: unknown}}})?.response;
+      alert(
+        typeof response?.data?.detail === "string"
+          ? response.data.detail
+          : "Error al cargar el estudio",
+      );
     }
   };
 
@@ -143,13 +170,14 @@ export default function page() {
   };
 
   const filteredPatients = getFilteredPatients();
-  const categoryNames = new Set(studyCategories.map((category) => category.name));
+  const categoryNames = new Set(
+    studyCategories.map((category) => category.name.trim().toLowerCase()),
+  );
   const studyTypeOptions = [
     ...studyCategories.map((category) => ({value: category.name, label: category.name})),
-    ...LEGACY_STUDY_TYPES.filter(([value]) => !categoryNames.has(value)).map(([value, label]) => ({
-      value,
-      label,
-    })),
+    ...LEGACY_STUDY_TYPES.filter(
+      ([value]) => !categoryNames.has(value.trim().toLowerCase()),
+    ).map(([value, label]) => ({value, label})),
   ];
 
   if (loading) {
@@ -304,31 +332,35 @@ export default function page() {
                 </div>
               </div>
 
-              {/* Subir PDF (custom) */}
               <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-800" htmlFor="study-pdf">
+                  {studyType === consentStudyType
+                    ? "Subir consentimiento informado (PDF)"
+                    : "Subir archivo del estudio"}
+                </label>
                 <input
                   ref={fileRef}
-                  accept="application/pdf, image/*"
-                  className="hidden"
-                  id="pdf"
-                  name="pdf"
+                  accept={studyType === consentStudyType ? ".pdf,application/pdf" : "application/pdf,image/*"}
+                  className="w-full rounded-lg border border-gray-300 bg-white p-2 text-gray-900"
+                  id="study-pdf"
+                  name="study-pdf"
+                  required
                   type="file"
                   onChange={(e) => {
-                    const f = e.target.files?.[0];
-
-                    setFileName(f ? f.name : "Sin archivos seleccionados");
+                    const selectedFile = e.target.files?.[0];
+                    if (
+                      studyType === consentStudyType &&
+                      selectedFile &&
+                      !selectedFile.name.toLowerCase().endsWith(".pdf")
+                    ) {
+                      e.target.value = "";
+                      setFileName("Sin archivos seleccionados");
+                      alert("El consentimiento informado debe ser un archivo PDF");
+                      return;
+                    }
+                    setFileName(selectedFile ? selectedFile.name : "Sin archivos seleccionados");
                   }}
                 />
-
-                <button
-                  className="flex w-full cursor-pointer items-center gap-3 text-gray-900"
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                >
-                  <span className="text-xl">⤴</span>
-                  <span className="font-medium">Subir archivo</span>
-                </button>
-
                 <p className="text-sm text-gray-500">{fileName}</p>
               </div>
 

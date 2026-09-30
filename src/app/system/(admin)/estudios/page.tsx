@@ -122,7 +122,12 @@ export default function StudiesPanelPage() {
                 className="h-12 w-12 rounded object-cover"
                 src={estudio.url_image}
               />
-              <span className="text-sm font-medium text-white">{estudio.name}</span>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-white">{estudio.name}</span>
+                <span className="text-xs text-neutral-300">
+                  Informe {estudio.requires_report ? "obligatorio" : "opcional"}
+                </span>
+              </div>
             </div>
             <button
               aria-label={`Eliminar ${estudio.name}`}
